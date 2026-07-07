@@ -1,0 +1,18 @@
+{
+  "collections": {
+    "users": {
+      "rules": {
+        "read": "request.auth != null",
+        "write": "request.auth != null && (request.auth.uid == id || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['owner', 'admin'])"
+      },
+      "indexes": []
+    },
+    "lists": {
+      "rules": {
+        "read": "request.auth != null",
+        "write": "request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['owner', 'admin']"
+      },
+      "indexes": []
+    }
+  }
+}
