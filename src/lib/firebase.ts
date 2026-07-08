@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import config from "../../firebase-applet-config.json";
 
@@ -11,8 +11,7 @@ const provider = new GoogleAuthProvider();
 
 export const loginWithGoogle = async () => {
   try {
-    const result = await signInWithPopup(auth, provider);
-    return result.user;
+    await signInWithRedirect(auth, provider);
   } catch (error) {
     console.error("Error signing in with Google", error);
     throw error;

@@ -6,7 +6,7 @@ import { InputForms } from './components/InputForms';
 import { ReservationList } from './components/ReservationList';
 import { Dashboard } from './components/Dashboard';
 import { parseTSV, processCheckInReservations, applyCheckOutComparison } from './utils/parser';
-import { Menu, Users, Loader2, X } from 'lucide-react';
+import { Menu, Users, Loader2, X, Turtle } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import { useLanguage } from './contexts/LanguageContext';
 import { Login } from './components/Login';
@@ -413,6 +413,8 @@ export default function App() {
             </div>
           </div>
         )}
+
+        <Turtle className="w-6 h-6 text-emerald-500/20 fixed bottom-4 right-4 z-50 pointer-events-none" />
       </main>
     </div>
   );
