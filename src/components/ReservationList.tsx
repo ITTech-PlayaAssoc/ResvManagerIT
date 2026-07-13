@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Reservation } from '../types';
 import { Check, MessageSquare, Trash2, Edit2, UserPlus, Plus, X, Save, GripVertical, LayoutGrid, List, FileText } from 'lucide-react';
 import { formatGuestTag, parseTSV, formatPropertyName } from '../utils/parser';
+import { generateUUID } from '../utils/uuid';
 
 interface ReservationListProps {
   reservations: Reservation[];
@@ -69,7 +70,7 @@ export const ReservationList: React.FC<ReservationListProps> = ({
   const handleSaveAdd = () => {
     if (onAddReservation && addForm.prop && addForm.unit) {
       onAddReservation({
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         prop: formatPropertyName(addForm.prop || ''),
         unit: (addForm.unit || '').trim().toUpperCase(),
         guest: addForm.guest ? formatGuestTag(addForm.guest) : '',
@@ -100,7 +101,7 @@ export const ReservationList: React.FC<ReservationListProps> = ({
       parsed.forEach(row => {
         if (row.prop && row.unit) {
           onAddReservation({
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             prop: formatPropertyName(row.prop || ''),
             unit: (row.unit || '').trim().toUpperCase(),
             guest: row.guest ? formatGuestTag(row.guest) : '',

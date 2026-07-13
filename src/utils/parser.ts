@@ -1,4 +1,5 @@
 import { Reservation } from '../types';
+import { generateUUID } from './uuid';
 
 export function parseTSV(text: string): Partial<Reservation>[] {
   const cleanText = text.replace(/\bselect\b[ \t]*/gi, '');
@@ -144,7 +145,7 @@ export function processCheckInReservations(rawRows: Partial<Reservation>[]): Res
     }
 
     reservations.push({
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       prop: formatPropertyName((row.prop || '').trim()),
       unit: (row.unit || '').trim().toUpperCase(),
       checkIn: row.checkIn || '',

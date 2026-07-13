@@ -6,6 +6,7 @@ import { InputForms } from './components/InputForms';
 import { ReservationList } from './components/ReservationList';
 import { Dashboard } from './components/Dashboard';
 import { parseTSV, processCheckInReservations, applyCheckOutComparison } from './utils/parser';
+import { generateUUID } from './utils/uuid';
 import { Menu, Users, Loader2, X, Turtle } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import { useLanguage } from './contexts/LanguageContext';
@@ -141,7 +142,7 @@ export default function App() {
       const processed = processCheckInReservations(rawRows);
       
       const newList: ProcessedList = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         date: new Date(checkInDate + 'T12:00:00Z').toISOString(),
         reservations: processed
       };
