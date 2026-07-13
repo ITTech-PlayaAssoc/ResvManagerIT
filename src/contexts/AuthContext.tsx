@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User } from 'firebase/auth';
+import { User, getRedirectResult } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -31,7 +31,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
+    // Process redirect result if any, to avoid redirect loops on some environments
+    const redirectPromise = getRedirectResult(auth).catch((error) => {
+      console.error("Error in getRedirectResult", error);
+    });
+
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
+      await redirectPromise; // Ensure redirect is processed before completing state update
+      
+      if (!isMounted) return;
+
       setUser(currentUser);
       if (currentUser) {
         try {
@@ -39,6 +50,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userRef = doc(db, 'users', currentUser.uid);
           const userSnap = await getDoc(userRef);
           
+          if (!isMounted) return;
+
           if (userSnap.exists()) {
             let userProfile = userSnap.data() as UserProfile;
             
@@ -65,18 +78,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             
             try {
               await setDoc(userRef, newProfile);
-              setProfile(newProfile);
+              if (isMounted) setProfile(newProfile);
             } catch (e) {
               console.error("Error creating user profile", e);
               // Fallback profile if rules reject write
-              setProfile(newProfile);
+              if (isMounted) setProfile(newProfile);
             }
           }
         } catch (err) {
           console.error("Error fetching user profile", err);
           const isOwner = currentUser.email === 'sjimenez@playaassoc.com';
           // Fallback if offline or network error
-          setProfile({
+          if (isMounted) setProfile({
             uid: currentUser.uid,
             email: currentUser.email,
             displayName: currentUser.displayName,
@@ -87,10 +100,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setProfile(null);
       }
-      setLoading(false);
+      if (isMounted) setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   return (
