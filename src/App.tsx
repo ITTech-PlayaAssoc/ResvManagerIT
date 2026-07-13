@@ -9,6 +9,7 @@ import { parseTSV, processCheckInReservations, applyCheckOutComparison } from '.
 import { Menu, Users, Loader2, X, Turtle } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import { useLanguage } from './contexts/LanguageContext';
+import { useSettings } from './contexts/SettingsContext';
 import { Login } from './components/Login';
 import { UserManagement } from './components/UserManagement';
 import { SettingsView } from './components/SettingsView';
@@ -20,6 +21,7 @@ type View = 'dashboard' | 'listados' | 'usuarios' | 'configuracion';
 export default function App() {
   const { user, profile, loading } = useAuth();
   const { t } = useLanguage();
+  const { settings } = useSettings();
   const [lists, setLists] = useState<ProcessedList[]>([]);
   const [currentListId, setCurrentListId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -290,7 +292,7 @@ export default function App() {
               <Menu className="w-6 h-6" />
             </button>
             <div>
-              <h1 className="text-lg font-semibold text-white">RESV-MANAGER</h1>
+              <h1 className="text-lg font-semibold text-white">{settings.appTitle || 'RESV-MANAGER'}</h1>
               <p className="text-xs text-slate-400 mt-1 capitalize">
                 {activeView === 'listados' ? (currentList 
                   ? `${t('activeList')}: ${format(new Date(currentList.date), 'dd MMMM yyyy, HH:mm')}`
