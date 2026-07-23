@@ -4,7 +4,7 @@ import { LogIn } from 'lucide-react';
 
 export const Login: React.FC = () => {
   return (
-    <div className="min-h-screen bg-[#0a0f1c] text-slate-300 flex items-center justify-center p-4">
+    <div className="min-h-[100dvh] bg-[#0a0f1c] text-slate-300 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-[#0f172a] rounded-2xl border border-slate-800 p-8 shadow-xl text-center">
         <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-emerald-400">
           <LogIn className="w-8 h-8" />

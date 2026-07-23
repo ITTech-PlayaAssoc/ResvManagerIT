@@ -79,7 +79,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#0f172a]">
+      <div className="flex h-[100dvh] w-full items-center justify-center bg-[#0f172a]">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
       </div>
     );
@@ -269,7 +269,7 @@ export default function App() {
   const reviewedReservations = currentList?.reservations.filter(r => r.isReviewed) || [];
 
   return (
-    <div className="flex h-screen bg-[#0f172a] font-sans text-slate-200 transition-colors">
+    <div className="flex h-[100dvh] bg-[#0f172a] font-sans text-slate-200 transition-colors">
       <Sidebar 
         lists={lists} 
         currentListId={currentListId} 
@@ -283,7 +283,7 @@ export default function App() {
         isAdmin={isAdmin}
       />
       
-      <main className="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
+      <main className="flex-1 overflow-y-auto custom-scrollbar flex flex-col min-h-0">
         <header className="sticky top-0 z-10 bg-[#0f172a]/80 backdrop-blur-md border-b border-slate-800 px-4 md:px-8 py-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
             <button

@@ -202,7 +202,7 @@ export const SettingsView: React.FC = () => {
                   <div className="mt-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50 inline-block">
                     <p className="text-xs text-slate-400 mb-2">Vista previa:</p>
                     <div className="w-10 h-10 rounded bg-slate-800 flex items-center justify-center overflow-hidden">
-                      <img src={appIcon} alt="Icon Preview" className="w-full h-full object-cover" />
+                      <img src={appIcon} alt="Icon Preview" className="w-full h-full object-contain" />
                     </div>
                   </div>
                 )}

@@ -83,6 +83,8 @@ const translations = {
     saveAppearance: 'Guardar Apariencia',
     uploadIcon: 'Subir icono',
     or: 'O',
+    deleteUser: 'Eliminar usuario',
+    confirmDeleteUser: '¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.',
   },
   en: {
     dashboard: 'Dashboard',
@@ -163,6 +165,8 @@ const translations = {
     saveAppearance: 'Save Appearance',
     uploadIcon: 'Upload icon',
     or: 'Or',
+    deleteUser: 'Delete user',
+    confirmDeleteUser: 'Are you sure you want to delete this user? This action cannot be undone.',
   },
   fr: {
     dashboard: 'Tableau de bord',
@@ -243,6 +247,8 @@ const translations = {
     saveAppearance: 'Enregistrer l\'apparence',
     uploadIcon: 'Télécharger l\'icône',
     or: 'Ou',
+    deleteUser: 'Supprimer l\'utilisateur',
+    confirmDeleteUser: 'Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.',
   }
 };
 

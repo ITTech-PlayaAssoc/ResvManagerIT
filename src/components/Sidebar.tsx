@@ -68,13 +68,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ lists, currentListId, onSelect
       )}
 
       {/* Sidebar Container */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0b1120] border-r border-slate-800 flex flex-col h-screen transition-transform duration-300 md:relative md:translate-x-0 flex-shrink-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0b1120] border-r border-slate-800 flex flex-col h-[100dvh] transition-transform duration-300 md:relative md:translate-x-0 flex-shrink-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 border-b border-slate-800">
           <div className="flex items-center justify-between gap-3 text-emerald-400 font-bold text-lg">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-emerald-500/20 rounded flex items-center justify-center border border-emerald-500/30 overflow-hidden">
                 {settings.appIcon ? (
-                  <img src={settings.appIcon} alt="App Icon" className="w-full h-full object-cover" />
+                  <img src={settings.appIcon} alt="App Icon" className="w-full h-full object-contain" />
                 ) : (
                   <Calendar className="w-5 h-5" />
                 )}

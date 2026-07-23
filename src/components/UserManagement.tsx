@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { UserProfile } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Shield, ShieldAlert, User as UserIcon } from 'lucide-react';
+import { Shield, ShieldAlert, User as UserIcon, Trash2 } from 'lucide-react';
 
 export const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -32,6 +32,18 @@ export const UserManagement: React.FC = () => {
     } catch (error) {
       console.error("Error updating role:", error);
       alert("Error al actualizar el rol. Verifica tus permisos.");
+    }
+  };
+
+  const handleDeleteUser = async (uid: string) => {
+    if (window.confirm(t('confirmDeleteUser' as any))) {
+      try {
+        await deleteDoc(doc(db, 'users', uid));
+        setUsers(prev => prev.filter(u => u.uid !== uid));
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        alert("Error al eliminar el usuario. Verifica tus permisos.");
+      }
     }
   };
 
@@ -87,16 +99,25 @@ export const UserManagement: React.FC = () => {
                     {u.role ? t(u.role as any) : ''}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-right">
+                <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
                   {u.role !== 'owner' ? (
-                    <select
-                      value={u.role}
-                      onChange={(e) => handleRoleChange(u.uid, e.target.value as 'admin' | 'supervisor')}
-                      className="bg-slate-950 border border-slate-700 text-slate-300 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2"
-                    >
-                      <option value="supervisor">{t('supervisor')}</option>
-                      <option value="admin">{t('admin')}</option>
-                    </select>
+                    <>
+                      <select
+                        value={u.role}
+                        onChange={(e) => handleRoleChange(u.uid, e.target.value as 'admin' | 'supervisor')}
+                        className="bg-slate-950 border border-slate-700 text-slate-300 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full max-w-[120px] p-2"
+                      >
+                        <option value="supervisor">{t('supervisor')}</option>
+                        <option value="admin">{t('admin')}</option>
+                      </select>
+                      <button
+                        onClick={() => handleDeleteUser(u.uid)}
+                        className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors border border-transparent hover:border-rose-500/20"
+                        title={t('deleteUser' as any)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </>
                   ) : (
                     <span className="text-xs text-slate-500 italic">{t('ownerImmutable')}</span>
                   )}
