@@ -186,21 +186,34 @@ export default function App() {
     }
   };
 
-  const updateReservation = async (id: string, updates: Partial<Reservation>) => {
+  const updateReservation = async (id: string, updates: Partial<Reservation>, isMinorUpdate = false) => {
     if (!isAdmin && !isSupervisor) return;
     if (!currentList) return;
     try {
+      if (!isMinorUpdate) {
+        triggerUndoableAction(currentList.id, currentList.reservations);
+      }
+
+      // Optimistic local update
+      let updatedReservations: Reservation[] = [];
+      setLists(prev => prev.map(l => {
+        if (l.id !== currentList.id) return l;
+        const newReservations = l.reservations.map(r => r.id === id ? { ...r, ...updates } : r);
+        updatedReservations = newReservations;
+        return {
+          ...l,
+          reservations: newReservations
+        };
+      }));
+
       const listRef = doc(db, 'lists', currentList.id);
-      const listSnap = await getDoc(listRef);
-      if (!listSnap.exists()) return;
-      const listData = listSnap.data() as ProcessedList;
-
-      triggerUndoableAction(currentList.id, listData.reservations);
-
-      const updatedReservations = listData.reservations.map(r => r.id === id ? { ...r, ...updates } : r);
-      await updateDoc(listRef, { reservations: updatedReservations });
+      await updateDoc(listRef, {
+        reservations: updatedReservations.length > 0 
+          ? updatedReservations 
+          : currentList.reservations.map(r => r.id === id ? { ...r, ...updates } : r)
+      });
     } catch (e: any) {
-      console.error(e);
+      console.error("Error updating reservation:", e);
     }
   };
 
@@ -339,7 +352,7 @@ export default function App() {
                     title={t('activeReservations')}
                     reservations={activeReservations}
                     onToggleReview={(id, rev) => updateReservation(id, { isReviewed: rev })}
-                    onUpdateComment={(id, com) => updateReservation(id, { comment: com })}
+                    onUpdateComment={(id, com) => updateReservation(id, { comment: com }, true)}
                     onToggleOccupancy={(id) => {
                       const res = currentList.reservations.find(r => r.id === id);
                       if (res) updateReservation(id, { isOccupied: !res.isOccupied });
@@ -356,7 +369,7 @@ export default function App() {
                       isReviewedList={true}
                       reservations={reviewedReservations}
                       onToggleReview={(id, rev) => updateReservation(id, { isReviewed: rev })}
-                      onUpdateComment={(id, com) => updateReservation(id, { comment: com })}
+                      onUpdateComment={(id, com) => updateReservation(id, { comment: com }, true)}
                       onToggleOccupancy={(id) => {
                         const res = currentList.reservations.find(r => r.id === id);
                         if (res) updateReservation(id, { isOccupied: !res.isOccupied });

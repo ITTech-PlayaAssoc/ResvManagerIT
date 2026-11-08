@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "description": "",
+  "name": "Gestión de Habitaciones",
+  "description": "Sistema de gestión y revisión de reservas, check-in y asignación de habitaciones.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

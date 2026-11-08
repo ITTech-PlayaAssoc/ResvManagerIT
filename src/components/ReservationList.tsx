@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Reservation } from '../types';
 import { Check, MessageSquare, Trash2, Edit2, UserPlus, Plus, X, Save, GripVertical, LayoutGrid, List, FileText } from 'lucide-react';
 import { formatGuestTag, parseTSV, formatPropertyName } from '../utils/parser';
@@ -16,6 +16,87 @@ interface ReservationListProps {
   onAddReservation?: (res: Reservation) => void;
   onReorderReservations?: (sourceId: string, targetId: string) => void;
 }
+
+interface CommentInputProps {
+  id: string;
+  initialComment: string;
+  onSave: (id: string, comment: string) => void;
+}
+
+const CommentInput: React.FC<CommentInputProps> = ({ id, initialComment, onSave }) => {
+  const [value, setValue] = useState(initialComment || '');
+  const [isFocused, setIsFocused] = useState(false);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedRef = useRef(initialComment || '');
+
+  // Keep in sync with external updates only when not actively typing/focused
+  useEffect(() => {
+    if (!isFocused) {
+      setValue(initialComment || '');
+      lastSavedRef.current = initialComment || '';
+    }
+  }, [initialComment, isFocused]);
+
+  const commitChange = (newValue: string) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    if (newValue !== lastSavedRef.current) {
+      lastSavedRef.current = newValue;
+      onSave(id, newValue);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setValue(val);
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    // Debounce save after 600ms of user idle time
+    debounceTimerRef.current = setTimeout(() => {
+      commitChange(val);
+    }, 600);
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    commitChange(value);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      commitChange(value);
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div className="flex items-center gap-2 w-full">
+      <MessageSquare className="w-3.5 h-3.5 text-slate-600 hidden md:block shrink-0" />
+      <input
+        type="text"
+        value={value}
+        onFocus={() => setIsFocused(true)}
+        onBlur={handleBlur}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        placeholder="Añadir nota..."
+        className="bg-transparent border-b border-transparent hover:border-slate-700 text-xs focus:border-emerald-500 outline-none w-full md:pr-4 text-slate-300 placeholder-slate-600 transition-colors py-1 md:py-0"
+      />
+    </div>
+  );
+};
 
 export const ReservationList: React.FC<ReservationListProps> = ({
   reservations,
@@ -403,16 +484,11 @@ export const ReservationList: React.FC<ReservationListProps> = ({
                     </div>
                   </td>
                   <td className={tdClass}>
-                    <div className="flex items-center gap-2">
-                      <MessageSquare className="w-3.5 h-3.5 text-slate-600 hidden md:block" />
-                      <input
-                        type="text"
-                        value={res.comment}
-                        onChange={(e) => onUpdateComment(res.id, e.target.value)}
-                        placeholder="Añadir nota..."
-                        className="bg-transparent border-b border-transparent hover:border-slate-700 text-xs focus:border-emerald-500 outline-none w-full md:pr-4 text-slate-300 placeholder-slate-600 transition-colors py-1 md:py-0"
-                      />
-                    </div>
+                    <CommentInput 
+                      id={res.id} 
+                      initialComment={res.comment} 
+                      onSave={onUpdateComment} 
+                    />
                   </td>
                   <td className={`${tdClass} text-left md:text-center mt-2 md:mt-0`}>
                     <div className="flex items-center gap-3 md:justify-center">
