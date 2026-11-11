@@ -3,7 +3,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { logout, loginWithGoogle } from '../lib/firebase';
-import { LogOut, User, RefreshCcw, Globe, Check, Image as ImageIcon, Type, Save, Loader2, Upload } from 'lucide-react';
+import { LogOut, User, RefreshCcw, Globe, Check, Image as ImageIcon, Type, Save, Loader2, Upload, ScrollText, ArrowRight } from 'lucide-react';
+import { ActivityLogsModal } from './ActivityLogsModal';
+import { logActivity } from '../utils/logger';
 
 export const SettingsView: React.FC = () => {
   const { profile } = useAuth();
@@ -13,6 +15,7 @@ export const SettingsView: React.FC = () => {
   const [appTitle, setAppTitle] = useState('');
   const [appIcon, setAppIcon] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isLogsOpen, setIsLogsOpen] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -55,6 +58,11 @@ export const SettingsView: React.FC = () => {
       await updateSettings({
         appTitle: appTitle.trim(),
         appIcon: appIcon.trim()
+      });
+      logActivity({
+        action: 'Actualizó la apariencia de la aplicación',
+        category: 'settings',
+        details: `Título: "${appTitle.trim()}"`
       });
     } catch (error) {
       console.error(error);
@@ -226,6 +234,42 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Logs de la Aplicación */}
+      <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-lg">
+        <div className="p-6 border-b border-slate-800">
+          <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2.5">
+            <ScrollText className="w-5 h-5 text-emerald-400" />
+            {t('activityLogs')}
+          </h2>
+          <p className="text-sm text-slate-400 mt-1">{t('activityLogsDesc')}</p>
+        </div>
+        
+        <div className="p-6">
+          <button
+            onClick={() => setIsLogsOpen(true)}
+            className="w-full sm:w-auto px-5 py-3.5 bg-slate-800/80 hover:bg-slate-800 text-white font-medium rounded-xl border border-slate-700/80 hover:border-emerald-500/50 transition-all flex items-center gap-4 group shadow-md"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <ScrollText className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors">
+                {t('viewActivityLogs')}
+              </p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Historial persistente con fecha, usuario y acciones registradas
+              </p>
+            </div>
+            <ArrowRight className="w-4 h-4 ml-auto text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
+          </button>
+        </div>
+      </div>
+
+      <ActivityLogsModal
+        isOpen={isLogsOpen}
+        onClose={() => setIsLogsOpen(false)}
+      />
     </div>
   );
 };

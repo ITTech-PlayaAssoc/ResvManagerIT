@@ -15,6 +15,7 @@ import { Login } from './components/Login';
 import { UserManagement } from './components/UserManagement';
 import { SettingsView } from './components/SettingsView';
 import { EditListDateModal } from './components/EditListDateModal';
+import { logActivity } from './utils/logger';
 import { collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, getDoc } from 'firebase/firestore';
 import { db } from './lib/firebase';
 
@@ -48,6 +49,11 @@ export default function App() {
     try {
       const listRef = doc(db, 'lists', undoData.listId);
       await updateDoc(listRef, { reservations: undoData.previousReservations });
+      logActivity({
+        action: 'Deshizo la última acción en el listado',
+        category: 'list',
+        details: `Lista ID: ${undoData.listId}`
+      });
       setUndoData(null);
       if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
     } catch (e: any) {
@@ -107,10 +113,16 @@ export default function App() {
   const handleDeleteList = async (id: string) => {
     if (!isAdmin) return;
     try {
+      const deletedList = lists.find(l => l.id === id);
       await deleteDoc(doc(db, 'lists', id));
       if (currentListId === id) {
         setCurrentListId(null);
       }
+      logActivity({
+        action: `Eliminó el listado del ${deletedList ? format(new Date(deletedList.date), 'dd/MM/yyyy') : id}`,
+        category: 'list',
+        details: `ID: ${id}, Habitaciones: ${deletedList?.reservations.length || 0}`
+      });
     } catch (e: any) {
       alert(`Error: ${e.message}`);
     }
@@ -119,6 +131,8 @@ export default function App() {
   const handleUpdateListDate = async (listId: string, newDateStr: string) => {
     if (!isAdmin) return;
     try {
+      const targetList = lists.find(l => l.id === listId);
+      const oldDate = targetList ? format(new Date(targetList.date), 'dd/MM/yyyy') : '';
       const isoDate = new Date(newDateStr + 'T12:00:00Z').toISOString();
       
       // Optimistic local update so lists re-group and header updates instantly
@@ -126,6 +140,12 @@ export default function App() {
       
       const listRef = doc(db, 'lists', listId);
       await updateDoc(listRef, { date: isoDate });
+
+      logActivity({
+        action: `Cambió la fecha del listado ${oldDate ? `de ${oldDate} ` : ''}a ${format(new Date(isoDate), 'dd/MM/yyyy')}`,
+        category: 'list',
+        details: `Lista ID: ${listId}`
+      });
     } catch (e: any) {
       console.error("Error updating list date:", e);
       alert(`Error al actualizar la fecha: ${e.message}`);
@@ -167,6 +187,11 @@ export default function App() {
 
       await setDoc(doc(db, 'lists', newList.id), newList);
       setCurrentListId(newList.id);
+      logActivity({
+        action: `Creó un nuevo listado con ${processed.length} reservas para el ${checkInDate}`,
+        category: 'list',
+        details: `Lista ID: ${newList.id}`
+      });
     } catch (e: any) {
       alert(`Error procesando Check In: ${e.message}`);
     } finally {
@@ -197,6 +222,11 @@ export default function App() {
       const updatedReservations = applyCheckOutComparison(listData.reservations, rawRows);
       
       await updateDoc(listRef, { reservations: updatedReservations });
+      logActivity({
+        action: `Cruzó datos de salida (Check Out) con ${rawRows.length} registros`,
+        category: 'list',
+        details: `Lista ID: ${currentList.id}`
+      });
     } catch (e: any) {
       alert(`Error procesando Check Out: ${e.message}`);
     } finally {
@@ -230,6 +260,31 @@ export default function App() {
           ? updatedReservations 
           : currentList.reservations.map(r => r.id === id ? { ...r, ...updates } : r)
       });
+
+      const oldRes = currentList.reservations.find(r => r.id === id);
+      if (updates.isReviewed !== undefined) {
+        logActivity({
+          action: `${updates.isReviewed ? 'Marcó como revisada' : 'Marcó como no revisada'} la unidad ${oldRes?.unit || ''} (${oldRes?.prop || ''})`,
+          category: 'reservation',
+          details: `Huésped: ${oldRes?.guest || 'N/A'}`
+        });
+      } else if (updates.isOccupied !== undefined) {
+        logActivity({
+          action: `Cambió estado a ${updates.isOccupied ? 'Ocupado' : 'Desocupado'} en unidad ${oldRes?.unit || ''}`,
+          category: 'reservation'
+        });
+      } else if (updates.comment !== undefined) {
+        logActivity({
+          action: `Actualizó nota en unidad ${oldRes?.unit || ''}`,
+          category: 'reservation',
+          details: updates.comment ? `Nota: "${updates.comment}"` : 'Nota eliminada'
+        });
+      } else {
+        logActivity({
+          action: `Editó datos de unidad ${oldRes?.unit || ''}`,
+          category: 'reservation'
+        });
+      }
     } catch (e: any) {
       console.error("Error updating reservation:", e);
     }
@@ -246,8 +301,15 @@ export default function App() {
 
       triggerUndoableAction(currentList.id, listData.reservations);
 
+      const deletedRes = listData.reservations.find(r => r.id === id);
       const updatedReservations = listData.reservations.filter(r => r.id !== id);
       await updateDoc(listRef, { reservations: updatedReservations });
+
+      logActivity({
+        action: `Eliminó reserva de unidad ${deletedRes?.unit || id} (${deletedRes?.prop || ''})`,
+        category: 'reservation',
+        details: `Huésped: ${deletedRes?.guest || 'N/A'}`
+      });
     } catch (e: any) {
       console.error(e);
     }
@@ -273,6 +335,12 @@ export default function App() {
       updatedReservations.splice(targetIndex, 0, movedItem);
 
       await updateDoc(listRef, { reservations: updatedReservations });
+
+      logActivity({
+        action: 'Reordenó las reservas en el listado',
+        category: 'reservation',
+        details: `Lista ID: ${currentList.id}`
+      });
     } catch (e: any) {
       console.error(e);
     }
@@ -291,6 +359,12 @@ export default function App() {
 
       const updatedReservations = [reservation, ...listData.reservations];
       await updateDoc(listRef, { reservations: updatedReservations });
+
+      logActivity({
+        action: `Añadió reserva manual unidad ${reservation.unit} (${reservation.prop})`,
+        category: 'reservation',
+        details: `Huésped: ${reservation.guest || 'N/A'}, Fechas: ${reservation.checkIn} - ${reservation.checkOut}`
+      });
     } catch (e: any) {
       console.error(e);
     }

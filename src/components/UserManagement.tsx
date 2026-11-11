@@ -4,6 +4,7 @@ import { db } from '../lib/firebase';
 import { UserProfile } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Shield, ShieldAlert, User as UserIcon, Trash2 } from 'lucide-react';
+import { logActivity } from '../utils/logger';
 
 export const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -27,8 +28,14 @@ export const UserManagement: React.FC = () => {
 
   const handleRoleChange = async (uid: string, newRole: 'admin' | 'supervisor') => {
     try {
+      const targetUser = users.find(u => u.uid === uid);
       await updateDoc(doc(db, 'users', uid), { role: newRole });
       setUsers(prev => prev.map(u => u.uid === uid ? { ...u, role: newRole } : u));
+      logActivity({
+        action: `Cambió el rol de ${targetUser?.displayName || targetUser?.email || 'un usuario'} a ${newRole}`,
+        category: 'user',
+        details: `Usuario: ${targetUser?.email || uid}, Nuevo rol: ${newRole}`
+      });
     } catch (error) {
       console.error("Error updating role:", error);
       alert("Error al actualizar el rol. Verifica tus permisos.");
@@ -38,8 +45,14 @@ export const UserManagement: React.FC = () => {
   const handleDeleteUser = async (uid: string) => {
     if (window.confirm(t('confirmDeleteUser' as any))) {
       try {
+        const targetUser = users.find(u => u.uid === uid);
         await deleteDoc(doc(db, 'users', uid));
         setUsers(prev => prev.filter(u => u.uid !== uid));
+        logActivity({
+          action: `Eliminó al usuario ${targetUser?.displayName || targetUser?.email || uid}`,
+          category: 'user',
+          details: `Email: ${targetUser?.email || ''}`
+        });
       } catch (error) {
         console.error("Error deleting user:", error);
         alert("Error al eliminar el usuario. Verifica tus permisos.");
