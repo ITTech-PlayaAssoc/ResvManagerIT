@@ -7,13 +7,14 @@ import { ReservationList } from './components/ReservationList';
 import { Dashboard } from './components/Dashboard';
 import { parseTSV, processCheckInReservations, applyCheckOutComparison } from './utils/parser';
 import { generateUUID } from './utils/uuid';
-import { Menu, Users, Loader2, X, Turtle } from 'lucide-react';
+import { Menu, Users, Loader2, X, Turtle, Calendar } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import { useLanguage } from './contexts/LanguageContext';
 import { useSettings } from './contexts/SettingsContext';
 import { Login } from './components/Login';
 import { UserManagement } from './components/UserManagement';
 import { SettingsView } from './components/SettingsView';
+import { EditListDateModal } from './components/EditListDateModal';
 import { collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, getDoc } from 'firebase/firestore';
 import { db } from './lib/firebase';
 
@@ -27,6 +28,7 @@ export default function App() {
   const [currentListId, setCurrentListId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState<View>('dashboard');
+  const [listToEditDate, setListToEditDate] = useState<ProcessedList | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -111,6 +113,22 @@ export default function App() {
       }
     } catch (e: any) {
       alert(`Error: ${e.message}`);
+    }
+  };
+
+  const handleUpdateListDate = async (listId: string, newDateStr: string) => {
+    if (!isAdmin) return;
+    try {
+      const isoDate = new Date(newDateStr + 'T12:00:00Z').toISOString();
+      
+      // Optimistic local update so lists re-group and header updates instantly
+      setLists(prev => prev.map(l => l.id === listId ? { ...l, date: isoDate } : l));
+      
+      const listRef = doc(db, 'lists', listId);
+      await updateDoc(listRef, { date: isoDate });
+    } catch (e: any) {
+      console.error("Error updating list date:", e);
+      alert(`Error al actualizar la fecha: ${e.message}`);
     }
   };
 
@@ -289,6 +307,7 @@ export default function App() {
         onSelectList={(id) => { setCurrentListId(id); setIsSidebarOpen(false); setActiveView('listados'); }} 
         onNewList={() => { handleNewList(); setIsSidebarOpen(false); }}
         onDeleteList={handleDeleteList}
+        onUpdateListDate={handleUpdateListDate}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         activeView={activeView}
@@ -307,11 +326,23 @@ export default function App() {
             </button>
             <div>
               <h1 className="text-lg font-semibold text-white">{settings.appTitle || 'RESV-MANAGER'}</h1>
-              <p className="text-xs text-slate-400 mt-1 capitalize">
-                {activeView === 'listados' ? (currentList 
-                  ? `${t('activeList')}: ${format(new Date(currentList.date), 'dd MMMM yyyy, HH:mm')}`
-                  : t('createNewList')) : t(activeView as any)}
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-slate-400 capitalize">
+                  {activeView === 'listados' ? (currentList 
+                    ? `${t('activeList')}: ${format(new Date(currentList.date), 'dd MMMM yyyy')}`
+                    : t('createNewList')) : t(activeView as any)}
+                </p>
+                {activeView === 'listados' && currentList && isAdmin && (
+                  <button
+                    onClick={() => setListToEditDate(currentList)}
+                    className="px-2 py-0.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded transition-colors inline-flex items-center gap-1.5 text-xs font-medium border border-slate-700/60"
+                    title={t('changeListDate')}
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>{t('changeDate')}</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -432,6 +463,13 @@ export default function App() {
 
         <Turtle className="w-6 h-6 text-emerald-500/20 fixed bottom-4 right-4 z-50 pointer-events-none" />
       </main>
+
+      <EditListDateModal
+        list={listToEditDate}
+        isOpen={!!listToEditDate}
+        onClose={() => setListToEditDate(null)}
+        onSaveDate={handleUpdateListDate}
+      />
     </div>
   );
 }
